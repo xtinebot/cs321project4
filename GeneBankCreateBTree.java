@@ -1,4 +1,7 @@
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 /**
  * Driver class for creating BTree from GBK file
@@ -15,11 +18,12 @@ public class GeneBankCreateBTree {
 	static File GBKFile;
 	static int seqLength;
 	static int debugLevel;
-	
 	static BTree tree;
+	static FileWriter fw;
+	static BufferedWriter bw;
 	
 	
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 		
 		// args: <0/1(no/with Cache)> <degree> <gbk file> <sequence length> [<cache size>] [<debug level>]
 		
@@ -56,19 +60,28 @@ public class GeneBankCreateBTree {
 		/* Set cache size */
 		if (args.length > 4) {
 			cacheSize = Integer.parseInt(args[4]);
-		} else {
-			cacheSize = 500;
 		}
 
 		/* Set debug level */
 		if (args.length > 5) {
 			debugLevel = Integer.parseInt(args[5]);
+			fw = new FileWriter("dump");
+			bw = new BufferedWriter(fw);
 		} else {
 			debugLevel = 0;
 		}
 		
 		
 		tree = new BTree(/* parameters*/);
+		
+		/* Print dump file */
+		if (debugLevel == 1) {
+			/* In-order search of tree and print toString to dump */
+			
+			bw.write(tree.toString());
+			bw.newLine();
+		}
+		
 		
 
 	}
