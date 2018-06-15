@@ -72,7 +72,7 @@ public class GeneBankCreateBTree {
 		}
 		
 		
-		tree = new BTree(/* parameters*/);
+		tree = new BTree(cacheSize, cacheSize, cacheSize, fileName);
 		
 		/* Print dump file */
 		if (debugLevel == 1) {
