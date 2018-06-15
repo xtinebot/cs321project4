@@ -17,6 +17,7 @@ public class TreeObject{
 	 * @param num
 	 * @return
 	 */
+	
 	public int equal(TreeObject obj){
 		if(obj == null){
 			return -1;
