@@ -1,51 +1,55 @@
-public class TreeObject{
 
-	private int frequency;
-	private long key;
-
-	public TreeObject(long key){
-		this.key=key;
-		frequency = 1;
-	}
-
-	public void increment(){
-		frequency++;
-	}
-
-	/**
-	 * Returns 0 if equal, -1 if less, or 1 if greater.
-	 * @param num
-	 * @return
-	 */
+public class TreeObject {
 	
-	public int equal(TreeObject obj){
-		if(obj == null){
-			return -1;
-		}
-
-		if(key == obj.getKey()){
-			return 0;
-		}else if(key < obj.getKey()){
-			return -1;
-		} else {
-			return 1;
-		}
+	
+	private long key;
+	private int freq;
+	
+	/**
+	 * CONSTRUCTOR for TreeObject
+	 * 
+	 * @param sequence	a long that is the key to this object
+	 * 					converted from the DNA sequence
+	 */
+	public TreeObject(long sequence) {
+		key = sequence;
+		freq = 1;
 	}
-
-	public long getKey(){
+	
+	public TreeObject(long sequence,int freq) {
+		key = sequence;
+		this.freq = freq;
+	}
+	/**
+	 * Increments frequency by one
+	 * 
+	 */
+	public void incrFreq() {
+		freq++;
+	}
+	
+	/**
+	 * Returns the frequency of this key
+	 * @return freq
+	 */
+	public int getFreq() {
+		return freq;
+	}
+	
+	/**
+	 * Returns the DNA sequence key in this TreeObject
+	 * @return DNAseq
+	 */
+	public long getKey() {
 		return key;
 	}
-
-	public String toString(){
-		return key + "";
-
+	
+	
+	public String toString() {
+		//convert DNAseq to string from long
+		
+		return key+"\t\t"+this.getFreq();
 	}
 
-	public int getFrequency() {
-		return frequency;
-	}
 
-	public void setFrequency(int frequency) {
-		this.frequency = frequency;
-	}
 }
