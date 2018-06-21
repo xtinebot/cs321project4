@@ -1,7 +1,10 @@
+//import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+//import java.io.InputStreamReader;
+//import java.io.Reader;
 
 /**
  * Driver class for creating BTree from GBK file
@@ -29,11 +32,11 @@ public class GeneBankCreateBTree {
 		
 		/* Usage output */
 		if (args.length < 4 || args.length > 6) {
-			System.out.println("USAGE: $ java GeneBankCreateBTree <0/1(no/with Cache)> "
+			System.err.println("USAGE: $ java GeneBankCreateBTree <0/1(no/with Cache)> "
 					+ "<degree> <gbk file> <sequence length> [<cache size>] [<debug level>]");
-			System.out.println("<degree>: choose 0 for optimal degree");
-			System.out.println("<sequence length>: from 1 to 31, inclusive");
-			System.out.println("<debug level>: 0 to print basic messages to console via stderr,"
+			System.err.println("<degree>: choose 0 for optimal degree");
+			System.err.println("<sequence length>: from 1 to 31, inclusive");
+			System.err.println("<debug level>: 0 to print basic messages to console via stderr,"
 					+ " 1 to print text file with DNA strings and frequencies\n");
 			System.exit(1);
 		}
@@ -47,8 +50,11 @@ public class GeneBankCreateBTree {
 			throw new IllegalArgumentException("Illegal argument, first argument must be 0 or 1");
 		}
 		
-		/* Set degree of BTree */
+		/* Set degree of BTree, set to ## if degree of 0 input via console */
 		degree = Integer.parseInt(args[1]);
+		if (degree == 0) {
+			degree = 3; // got 127 based on calcs??
+		}
 		
 		/* Set GBK File to parse */
 		fileName = args[2];
@@ -57,10 +63,6 @@ public class GeneBankCreateBTree {
 		/* Set sequence length to parse */
 		seqLength = Integer.parseInt(args[3]);
 		
-		/* Set cache size */
-		if (args.length > 4) {
-			cacheSize = Integer.parseInt(args[4]);
-		}
 
 		/* Set debug level */
 		if (args.length > 5) {
@@ -72,14 +74,42 @@ public class GeneBankCreateBTree {
 		}
 		
 		
-		tree = new BTree(/* parameters*/);
+
+		
+		
+		
+		/* Set cache size */
+		if (args.length > 4) {
+			cacheSize = Integer.parseInt(args[4]);
+		} else if (hasCache == true) {
+			cacheSize = 500;
+		}
+		
+		
+		/* Initialize the B-Tree with or without cache */
+		if (hasCache) {
+			tree = new BTree(degree, cacheSize, seqLength, fileName);
+		} else {
+			tree = new BTree(degree, seqLength, fileName);			
+		}
+		
+		/* Parse GBK file into one DNA string */
+		ParseGBKFile parser = new ParseGBKFile(GBKFile);
+		while (parser.findDNA()) {
+			String wholeDNASequence = parser.parseDNA(); // get whole DNA string
+			/* Add sequences of desired length to the tree */
+			for (int i = 0; i < wholeDNASequence.length() - seqLength; i++) {
+				String keySequence = wholeDNASequence.substring(i, i + seqLength);
+				System.out.print(keySequence + "\t");
+				long key = parser.stringToKey(keySequence);
+				tree.insert(key);
+				//System.out.println(key);
+			}
+		}
 		
 		/* Print dump file */
 		if (debugLevel == 1) {
-			/* In-order search of tree and print toString to dump */
-			
-			bw.write(tree.toString());
-			bw.newLine();
+			tree.dumpTree();
 		}
 		
 		
