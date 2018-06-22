@@ -63,26 +63,13 @@ public class GeneBankCreateBTree {
 		/* Set sequence length to parse */
 		seqLength = Integer.parseInt(args[3]);
 		
-
-		/* Set debug level */
-		if (args.length > 5) {
-			debugLevel = Integer.parseInt(args[5]);
-			fw = new FileWriter("dump");
-			bw = new BufferedWriter(fw);
-		} else {
-			debugLevel = 0;
-		}
-		
-		
-
-		
-		
-		
-		/* Set cache size */
-		if (args.length > 4) {
+		/* Set cache size and debug level */
+		if (hasCache == true) { // if has cache, size must be input parameter
 			cacheSize = Integer.parseInt(args[4]);
-		} else if (hasCache == true) {
-			cacheSize = 500;
+		} else if (args.length > 4) { // if no cache and has another argument, arg is debug level
+			debugLevel = Integer.parseInt(args[4]);
+		} else { // else default debug level set to 0
+			debugLevel = 0;
 		}
 		
 		
