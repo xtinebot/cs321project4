@@ -81,8 +81,8 @@ public class ParseGBKFile {
 				DNA = DNA.replace("T", "11");
 			}
 		}
-		
-		longSeq = Long.parseLong(DNA);
+//		System.out.println(DNA);
+		longSeq = Long.parseLong(DNA,2);
 		return longSeq;
 	}
 	

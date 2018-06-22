@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 
+
 public class BTree {
 	private final static byte A = 0;
 	private final static byte T = 3;
@@ -22,7 +23,7 @@ public class BTree {
 	private int sequence;
 	private RandomAccessFile raf;
 	private int offsetJump;
-	
+	int sum = 0;
 
 	private int blockSize = 4096;
 
@@ -85,6 +86,7 @@ public class BTree {
 		}	
 	}
 	
+	
 	/**
 	 * Constructor for creating tree from pre-made file
 	 * Useful for running GeneBankSearch
@@ -107,7 +109,6 @@ public class BTree {
 		}
 		
 	}
-
 	
 
 	public void test(int i){
@@ -131,7 +132,7 @@ public class BTree {
 	public int getSequence(){
 		return sequence;
 	}
-
+	
 	/**
 	 * Creates a file containing all the sequences with their frequency
 	 *
@@ -170,44 +171,52 @@ public class BTree {
 	}
 	
 	public String traverse(BTreeNode node) {
-		String DNAandFreq = "";
+		StringBuilder DNAandFreq = new StringBuilder();
 		int k;
+		
 		for (k = 0; k < node.n; k++) {
 			if (!node.isLeaf()) {
-				traverse(diskRead(node.children[k]));
+				DNAandFreq.append(traverse(diskRead(node.children[k])));
 			}
-			DNAandFreq = keyToString(node.objects[k].getKey()); // concat DNA with freq to return to dump method for printing
-			DNAandFreq = "\t" + node.objects[k].getFreq() + "\n";
+			DNAandFreq.append(keyToString(node.objects[k].getKey()).toLowerCase()); 
+			DNAandFreq.append(":\t" + node.objects[k].getFreq() + "\n");
+			sum += node.objects[k].getFreq();
 		}
 		if (!node.isLeaf()) {
-			traverse(diskRead(node.children[k]));
+			DNAandFreq.append(traverse(diskRead(node.children[k])));
 		}
-		return DNAandFreq;
+//		System.out.println("SUM = " + sum);
+		return DNAandFreq.toString();
 	}
 	
-	public String keyToString(Long DNA) {
+	public String keyToString(long DNA) {
 		
-		String stringSeq = DNA.toString();
+		String stringSeq = Long.toBinaryString(DNA);
+		if (stringSeq.length() % 2 != 0) {
+			stringSeq = "0" + stringSeq;
+		}
 		int diff = sequence - stringSeq.length()/2;
 		for (int i = 0; i < diff; i++) {
 			stringSeq = "00" + stringSeq;
 		}
+//		System.out.println(stringSeq);
 		String retDNA = "";
 		
-		for(int i = 0; i < stringSeq.length()/2; i+=2) {
+		for(int i = 0; i < stringSeq.length(); i+=2) {
 			if ((stringSeq.charAt(i) == '0') && (stringSeq.charAt(i+1) == '0')) {
-				retDNA = "A" + retDNA;
+				retDNA =  retDNA + "A";
 			} else if ((stringSeq.charAt(i) == '0') && (stringSeq.charAt(i+1) == '1')) {
-				retDNA = "C" + retDNA;
+				retDNA = retDNA + "C";
 			} else if ((stringSeq.charAt(i) == '1') && (stringSeq.charAt(i+1) == '0')) {
-				retDNA = "G" + retDNA;
+				retDNA = retDNA + "G";
 			} else if ((stringSeq.charAt(i) == '1') && (stringSeq.charAt(i+1) == '1')) {
-				retDNA = "T" + retDNA;
+				retDNA = retDNA + "T";
 			}
 		}
 		
 		return retDNA;
 	}
+	
 	
 	private TreeObject searches(int node,long key ){
 		BTreeNode point=diskRead(node);
@@ -289,28 +298,17 @@ public class BTree {
 		
 	}
 	
-<<<<<<< HEAD
 //	private void nodeWrite(BTreeNode node) {
 //		if (cache!=null) {
+//			cache.remove(node);
 //			BTreeNode check =cache.addObject(node);
 //			if(check!=null) {
 //				diskWrite(check);
 //			}
+//		}else {
+//			diskWrite(node);
 //		}
 //	}
-=======
-	private void nodeWrite(BTreeNode node) {
-		if (cache!=null) {
-			cache.remove(node);
-			BTreeNode check =cache.addObject(node);
-			if(check!=null) {
-				diskWrite(check);
-			}
-		}else {
-			diskWrite(node);
-		}
-	}
->>>>>>> faa9fad0f8da9559b810af48e299fb0911934d76
 
 
 	private void diskWrite(BTreeNode node) {

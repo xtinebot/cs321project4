@@ -2,9 +2,6 @@
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
-//import java.io.InputStreamReader;
-//import java.io.Reader;
 
 /**
  * Driver class for creating BTree from GBK file
@@ -26,7 +23,7 @@ public class GeneBankCreateBTree {
 	static BufferedWriter bw;
 	
 	
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws Exception {
 		
 		// args: <0/1(no/with Cache)> <degree> <gbk file> <sequence length> [<cache size>] [<debug level>]
 		
@@ -87,9 +84,15 @@ public class GeneBankCreateBTree {
 			/* Add sequences of desired length to the tree */
 			for (int i = 0; i < wholeDNASequence.length() - seqLength; i++) {
 				String keySequence = wholeDNASequence.substring(i, i + seqLength);
-				System.out.print(keySequence + "\t");
-				long key = parser.stringToKey(keySequence);
-				tree.insert(key);
+				if (!keySequence.contains("N")) {
+//					System.out.print(keySequence + "\t");
+					if (keySequence.equals("AAACTA")) {
+						System.out.println("FOUND: " + keySequence);
+					}
+					long key = parser.stringToKey(keySequence);
+					tree.insert(key);
+				}
+				
 				//System.out.println(key);
 			}
 		}
