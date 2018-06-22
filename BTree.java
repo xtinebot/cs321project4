@@ -16,7 +16,7 @@ public class BTree {
 	private String fileName;
 	private File data;
 	private int currentOffset;
-	private Cache cache;
+	private Cache<BTreeNode> cache;
 	private int sequence;
 	private RandomAccessFile raf;
 	private ByteBuffer bb;
@@ -29,7 +29,7 @@ public class BTree {
 			this.degree=degree;
 			this.fileName=fileName;
 			offsetJump=13+(degree*2-1)*16;
-			this.cache=new Cache(cacheSize);
+			this.cache=new Cache<BTreeNode>(cacheSize);
 			this.sequence=sequence;
 			try {
 				raf=new RandomAccessFile(fileName+".btree.data"+sequence+degree,"rw");
@@ -38,7 +38,10 @@ public class BTree {
 				raf.writeInt(degree);
 				raf.writeInt(height);
 				raf.writeInt(sequence);
-				
+				root=(int) raf.getFilePointer();
+				BTreeNode theRoot=new BTreeNode(root, 0, true,new int[2*degree],new TreeObject[2*degree-1]);
+				currentOffset=root+offsetJump;
+				diskWrite(theRoot);
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -56,6 +59,10 @@ public class BTree {
 		try {
 			raf=new RandomAccessFile(fileName+".btree.data"+sequence+degree,"rw");
 			raf.setLength(4096);
+			raf.writeInt(root);
+			raf.writeInt(degree);
+			raf.writeInt(height);
+			raf.writeInt(sequence);
 			root=(int) raf.getFilePointer();
 			BTreeNode theRoot=new BTreeNode(root, 0, true,new int[2*degree],new TreeObject[2*degree-1]);
 			currentOffset=root+offsetJump;
@@ -70,8 +77,22 @@ public class BTree {
 		}	
 	}
 
-	public String test(){
-		return diskRead(root).toString();
+	public void test(int i){
+		BTreeNode current=diskRead(i);
+		System.out.println(current.toString());
+		if(!current.isLeaf()){
+			for(int j=0;j<current.n+1;j++) {
+				test(current.children[j]);
+			}
+		}
+	}
+
+	public int getRoot() {
+		return root;
+	}
+
+	public void setRoot(int root) {
+		this.root = root;
 	}
 
 	public int getSequence(){
@@ -85,10 +106,27 @@ public class BTree {
 		
 	}
 	
-	private TreeObject searches(int root2,long key ){
-		
-		return null;
-		
+	private TreeObject searches(int node,long key ){
+		BTreeNode point=diskRead(node);
+//		int index = point.searchInd(key, 0, point.n);
+//		if(index<0) {
+//			return null;
+//		}
+//		if(point.objects[index]!=null&&point.objects[index].getKey()==key) {
+//			return point.objects[index];
+//		}
+		int i=0;
+		while(i<point.n&&key>point.objects[i].getKey()) {
+			i++;
+		}
+		if(i<point.n&&key==point.objects[i].getKey()) {
+			return point.objects[i];
+		}if(point.isLeaf()) {
+			return null;
+		}else {
+			return searches(point.children[i],key);
+		}
+				
 	}
 	/**
 	 * Searched for the specified key, returns null if no match is found.
@@ -130,6 +168,15 @@ public class BTree {
 		return node;
 		
 	}
+	
+	private void nodeWrite(BTreeNode node) {
+		if (cache!=null) {
+			BTreeNode check =cache.addObject(node);
+			if(check!=null) {
+				diskWrite(check);
+			}
+		}
+	}
 
 
 	private void diskWrite(BTreeNode node) {
@@ -155,8 +202,9 @@ public class BTree {
 	 * Searches if the specified object is contained in the the Tree already and increased the frequency counter otherwise it inserts
 	 * the new TreeOvject into the tree.
 	 * @param key
+	 * @throws Exception 
 	 */
-	public void insert(long key){
+	public void insert(long key) throws Exception{
 		boolean done=false;
 		BTreeNode current=diskRead(root);
 		BTreeNode next;
@@ -196,16 +244,16 @@ public class BTree {
 		TreeObject mid =child.objects[child.n/2];
 		parent.addInner(mid);
 		TreeObject[] objects = new TreeObject[2*degree-1];
+		int j = 0;
 		int[] children = new int[2*degree];
 			for(int i= child.n/2+1;i<child.n;i++) {
-				int j = 0;
 				objects[j]=child.objects[i];
 				children[j]=child.children[i];
 				j++;
 			}
-		children[child.n]=child.children[child.n];
-		BTreeNode newChild = new BTreeNode(currentOffset,child.n/2,child.leaf,children,objects);
-		child.n=child.n/2;
+		children[j]=child.children[child.n];
+		BTreeNode newChild = new BTreeNode(currentOffset,degree-1,child.leaf,children,objects);
+		child.n=degree-1;
 		parent.addChild(childIndex+1, newChild.offset);
 		diskWrite(newChild);
 		diskWrite(child);
@@ -259,15 +307,15 @@ public class BTree {
 		}
 
 		public void addInner(TreeObject object) {
-			int search= search(object.getKey(),0,n);
+			int search= searchInd(object.getKey(),0,n);
 			if(n==0) {
 				objects[search]=object;
 				n++;
-			}else if(objects[search].getKey()==object.getKey()) {
+			}else if(objects[search]!=null&&objects[search].getKey()==object.getKey()) {
 				objects[search].incrFreq();
 			}else{
 				if(search!=n) {
-					for(int i=n-1;i>search;i--) {
+					for(int i=n;i>search;i--) {
 						objects[i]=objects[i-1];
 					}
 				}
@@ -277,8 +325,8 @@ public class BTree {
 			diskWrite(this);
 		}
 
-		public int add(long key) {
-			int search= search(key,0,n);
+		public int add(long key) throws Exception {
+			int search= searchInd(key,0,n);
 			if(n==0) {
 				objects[0]=new TreeObject(key);
 				n++;
@@ -287,7 +335,7 @@ public class BTree {
 				objects[search].incrFreq();
 				search=-1;
 			}else if(isLeaf()){
-					for(int i=n;i>search;i--) {
+				for(int i=n;i>search;i--) {
 						objects[i]=objects[i-1];
 				}
 				objects[search]=new TreeObject(key);
@@ -297,31 +345,57 @@ public class BTree {
 				search++;
 			}
 			diskWrite(this);
+			if(search>-1&&children[search]==0) {
+				throw new Exception();
+			}
+			
 			return search;	
 		}
 		private boolean isLeaf() {
 			return leaf==true;
 		}
 
-		public int search(long key,int start, int end) {
-			int current= (end-start)/2;
-			if(n==0) {
-				current=0;
-			}else if(objects[end-1].getKey()<key) {
-				current=end;
-			}else if(start==end-1) {
-				current=start;
-			}else if(objects[current].getKey()>=key){
-				current=search(key,current,end);
-			}else {
-				current=search(key,start,current);
+		public int searchInd(long key,int start, int end) {
+//			int current= (end-start)/2;
+//			if(n==0) {
+//				current=0;
+//			}else if(objects[end-1].getKey()<key) {
+//				current=end;
+//			}else if(start==end-1) {
+//				current=start;
+//			}else if(objects[current].getKey()<=key){
+//				current=searchInd(key,current,end);
+//			}else {
+//				current=searchInd(key,start,current);
+//			}
+//			return current;
+			int i=0;
+			while(i<n&&key>objects[i].getKey()) {
+				i++;
 			}
-			return current;
+			return i;
+		}
+		
+		public TreeObject search(long key,int start, int end) {
+			int current= (end-start)/2;
+			TreeObject found;
+			if(n==0) {
+				return null;
+			}else if(key==objects[current].getKey()) {
+				return objects[current];
+			}else if(start==end-1){
+				return null;
+			}else if(objects[current].getKey()>=key){
+				found=search(key,current,end);
+			}else {
+				found=search(key,start,current);
+			}
+			return found;
 		}
 		
 		public String toString(){
 			StringBuilder string= new StringBuilder();
-			string.append("Node");
+			string.append("isLeaf: "+leaf+" number of objects: "+n+"\n");
 			for(int i=0;i<n;i++) {
 				string.append(objects[i].toString()+"\n");
 			}
