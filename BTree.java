@@ -1,5 +1,7 @@
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
@@ -82,6 +84,31 @@ public class BTree {
 			e.printStackTrace();
 		}	
 	}
+	
+	/**
+	 * Constructor for creating tree from pre-made file
+	 * Useful for running GeneBankSearch
+	 * 
+	 * @param fileName	the name of the file that contains
+	 * 					B-Tree data
+	 * @throws FileNotFound 
+	 */
+	public BTree(String fileName) {
+		try {
+			raf = new RandomAccessFile(fileName, "r");
+			this.root = raf.readInt();
+			this.degree = raf.readInt();
+			this.height = raf.readInt();
+			this.sequence = raf.readInt();
+			offsetJump=13+(degree*2-1)*16;
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+	}
+
+	
 
 	public void test(int i){
 		BTreeNode current=diskRead(i);
@@ -104,12 +131,82 @@ public class BTree {
 	public int getSequence(){
 		return sequence;
 	}
+
 	/**
 	 * Creates a file containing all the sequences with their frequency
 	 *
 	 */
 	public void dumpTree(){
+		File dump = new File("dump");
+		FileWriter fw;
+		BufferedWriter out;
+			try {
+				if(!dump.exists()){
+					dump.createNewFile();
+				}
+				fw = new FileWriter(dump.getAbsolutePath());
+				out = new BufferedWriter(fw);
+				
+			/////// insert here ///////
+				raf.seek(0);
+				BTreeNode r = diskRead(raf.readInt()); // this needs another look
+				out.write(traverse(r));
+				
+				
+//				int j = 0;
+//				TreeObject i = search(j);
+//				while (i != null) {
+//					System.out.println(keyToString(i.getKey()));
+//					out.write("" + i.getFreq() + " " + keyToString(i.getKey()));
+//					out.newLine();
+//					j++;
+//					i = search(j);
+//				}
+				out.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	}
+	
+	public String traverse(BTreeNode node) {
+		String DNAandFreq = "";
+		int k;
+		for (k = 0; k < node.n; k++) {
+			if (!node.isLeaf()) {
+				traverse(diskRead(node.children[k]));
+			}
+			DNAandFreq = keyToString(node.objects[k].getKey()); // concat DNA with freq to return to dump method for printing
+			DNAandFreq = "\t" + node.objects[k].getFreq() + "\n";
+		}
+		if (!node.isLeaf()) {
+			traverse(diskRead(node.children[k]));
+		}
+		return DNAandFreq;
+	}
+	
+	public String keyToString(Long DNA) {
 		
+		String stringSeq = DNA.toString();
+		int diff = sequence - stringSeq.length()/2;
+		for (int i = 0; i < diff; i++) {
+			stringSeq = "00" + stringSeq;
+		}
+		String retDNA = "";
+		
+		for(int i = 0; i < stringSeq.length()/2; i+=2) {
+			if ((stringSeq.charAt(i) == '0') && (stringSeq.charAt(i+1) == '0')) {
+				retDNA = "A" + retDNA;
+			} else if ((stringSeq.charAt(i) == '0') && (stringSeq.charAt(i+1) == '1')) {
+				retDNA = "C" + retDNA;
+			} else if ((stringSeq.charAt(i) == '1') && (stringSeq.charAt(i+1) == '0')) {
+				retDNA = "G" + retDNA;
+			} else if ((stringSeq.charAt(i) == '1') && (stringSeq.charAt(i+1) == '1')) {
+				retDNA = "T" + retDNA;
+			}
+		}
+		
+		return retDNA;
 	}
 	
 	private TreeObject searches(int node,long key ){
@@ -192,6 +289,16 @@ public class BTree {
 		
 	}
 	
+<<<<<<< HEAD
+//	private void nodeWrite(BTreeNode node) {
+//		if (cache!=null) {
+//			BTreeNode check =cache.addObject(node);
+//			if(check!=null) {
+//				diskWrite(check);
+//			}
+//		}
+//	}
+=======
 	private void nodeWrite(BTreeNode node) {
 		if (cache!=null) {
 			cache.remove(node);
@@ -203,6 +310,7 @@ public class BTree {
 			diskWrite(node);
 		}
 	}
+>>>>>>> faa9fad0f8da9559b810af48e299fb0911934d76
 
 
 	private void diskWrite(BTreeNode node) {
