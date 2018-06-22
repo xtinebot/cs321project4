@@ -50,7 +50,7 @@ public class GeneBankCreateBTree {
 		/* Set degree of BTree, set to ## if degree of 0 input via console */
 		degree = Integer.parseInt(args[1]);
 		if (degree == 0) {
-			degree = 3; // got 127 based on calcs??
+			degree = 127; // got 127 based on calcs??
 		}
 		
 		/* Set GBK File to parse */

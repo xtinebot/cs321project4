@@ -8,10 +8,6 @@ import java.nio.ByteBuffer;
 
 
 public class BTree {
-	private final static byte A = 0;
-	private final static byte T = 3;
-	private final static byte C = 1;
-	private final static byte G = 2;
 
 	private int root;  // root of the BTree
 	private int degree = 1; // degree of BTree
@@ -35,7 +31,7 @@ public class BTree {
 			this.cache=new Cache<BTreeNode>(cacheSize);
 			this.sequence=sequence;
 			try {
-				raf=new RandomAccessFile(fileName+".btree.data"+sequence+degree,"rw");
+				raf=new RandomAccessFile(fileName+".btree.data."+sequence+"."+degree,"rw");
 				
 				raf.setLength(4096);
 				bb.putInt(root);
@@ -66,7 +62,7 @@ public class BTree {
 		this.sequence=sequence;
 		try {
 			ByteBuffer.allocate(16);
-			raf=new RandomAccessFile(fileName+".btree.data"+sequence+degree,"rw");
+			raf=new RandomAccessFile(fileName+".btree.data."+sequence+"."+degree,"rw");
 			raf.setLength(4096);
 			raf.writeInt(root);
 			raf.writeInt(degree);
@@ -89,7 +85,7 @@ public class BTree {
 	
 	/**
 	 * Constructor for creating tree from pre-made file
-	 * Useful for running GeneBankSearch
+	 * Used for running GeneBankSearch
 	 * 
 	 * @param fileName	the name of the file that contains
 	 * 					B-Tree data
@@ -99,7 +95,7 @@ public class BTree {
 		try {
 			raf = new RandomAccessFile(fileName, "r");
 			this.root = raf.readInt();
-			this.degree = raf.readInt();
+			this.degree = raf.readInt(); // check to make sure this is right order
 			this.height = raf.readInt();
 			this.sequence = raf.readInt();
 			offsetJump=13+(degree*2-1)*16;
@@ -148,21 +144,9 @@ public class BTree {
 				fw = new FileWriter(dump.getAbsolutePath());
 				out = new BufferedWriter(fw);
 				
-			/////// insert here ///////
 				raf.seek(0);
 				BTreeNode r = diskRead(raf.readInt()); // this needs another look
 				out.write(traverse(r));
-				
-				
-//				int j = 0;
-//				TreeObject i = search(j);
-//				while (i != null) {
-//					System.out.println(keyToString(i.getKey()));
-//					out.write("" + i.getFreq() + " " + keyToString(i.getKey()));
-//					out.newLine();
-//					j++;
-//					i = search(j);
-//				}
 				out.close();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
@@ -411,7 +395,7 @@ public class BTree {
 	private class BTreeNode{
 
 		public Boolean leaf;
-		public int offset; // File offset to locate date
+		public int offset; // File offset to locate data
 
 		public int n; // number of keys;
 		

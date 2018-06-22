@@ -1,0 +1,37 @@
+***********************************
+Project 4:		BTree
+Team Members:	Christine Chang
+				Keaton Gillihan
+				Koutam Haidara
+CS 321, Summer 2018
+***********************************
+
+***********************************
+LAYOUT OF THE B-TREE ON THE FILE
+***********************************
+The random access file to which the B-Tree is written
+stores the root location pointer, degree of the tree,
+height of the tree, and length of the sequence in the
+first four 4-byte positions of the file:
+
+First 4 bytes (int):		root location pointer
+Second 4 bytes (int):	degree of the tree
+Third 4 bytes (int):		height of the tree
+Fourth 4 bytes (int):	length of sequence to search
+
+
+Each BTreeNode stores up to [(2 * degree) - 1] number
+of TreeObjects. A BTreeNode contains a boolean to
+indicate whether the node is a leaf node, a location
+pointer, the number of keys, and array of pointers
+for the children nodes, and an array of the 
+TreeObjects contained in the node.
+
+
+***********************************
+RELEVANT OBSERVATIONS
+***********************************
+ --- I believe that observations around the use of
+ the cache are supposed to go here ---
+
+
