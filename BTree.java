@@ -19,13 +19,13 @@ public class BTree {
 	private Cache<BTreeNode> cache;
 	private int sequence;
 	private RandomAccessFile raf;
-	private ByteBuffer bb;
 	private int offsetJump;
 	
 
 	private int blockSize = 4096;
 
 	public BTree(int degree,int cacheSize,int sequence, String fileName){
+			ByteBuffer bb= ByteBuffer.allocate(16);
 			this.degree=degree;
 			this.fileName=fileName;
 			offsetJump=13+(degree*2-1)*16;
@@ -33,11 +33,16 @@ public class BTree {
 			this.sequence=sequence;
 			try {
 				raf=new RandomAccessFile(fileName+".btree.data"+sequence+degree,"rw");
+				
 				raf.setLength(4096);
-				raf.writeInt(root);
-				raf.writeInt(degree);
-				raf.writeInt(height);
-				raf.writeInt(sequence);
+				bb.putInt(root);
+				bb.putInt(height);
+				bb.putInt(degree);
+				bb.putInt(sequence);
+				bb.flip();
+				byte[] data= new byte[bb.limit()];
+				bb.get(data);
+				raf.write(data);
 				root=(int) raf.getFilePointer();
 				BTreeNode theRoot=new BTreeNode(root, 0, true,new int[2*degree],new TreeObject[2*degree-1]);
 				currentOffset=root+offsetJump;
@@ -57,6 +62,7 @@ public class BTree {
 		offsetJump=13+(degree*2-1)*16;
 		this.sequence=sequence;
 		try {
+			ByteBuffer.allocate(16);
 			raf=new RandomAccessFile(fileName+".btree.data"+sequence+degree,"rw");
 			raf.setLength(4096);
 			raf.writeInt(root);
@@ -138,27 +144,44 @@ public class BTree {
 	
 		return searches(root, key);
 	}	
+	
+	private BTreeNode nodeRead(int offset) {
+		if(cache!=null) {
+//			cache.moveObject();
+		}
+		return null;
+		
+	}
 
 	private BTreeNode diskRead(int offset) {
 		BTreeNode node = null;
 		TreeObject[] objects;
 		long key;
 		int freq;
+		boolean l=true;
 		int[]children;
 		try {
+			ByteBuffer bb= ByteBuffer.allocate(offsetJump);
+			byte[] data=new byte[offsetJump];
 			raf.seek(offset);
-			raf.readInt();
-			boolean l=raf.readBoolean();
-			int n=raf.readInt();
+			raf.read(data);
+			bb.put(data);
+			bb.flip();
+			
+			bb.getInt();
+			if(bb.get()==0) {
+				l=false;
+			}
+			int n=bb.getInt();
 			objects= new TreeObject[2*degree-1];
 			children= new int[2*degree];
 			for(int i=0;i<n;i++) {
-				children[i]=raf.readInt();
-				key= raf.readLong();
-				freq=raf.readInt();
+				children[i]=bb.getInt();
+				key= bb.getLong();
+				freq=bb.getInt();
 				objects[i]=new TreeObject(key,freq);
 			}
-			children[n]=raf.readInt();
+			children[n]=bb.getInt();
 			node= new BTreeNode(offset,n,l,children,objects);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -171,27 +194,39 @@ public class BTree {
 	
 	private void nodeWrite(BTreeNode node) {
 		if (cache!=null) {
+			cache.remove(node);
 			BTreeNode check =cache.addObject(node);
 			if(check!=null) {
 				diskWrite(check);
 			}
+		}else {
+			diskWrite(node);
 		}
 	}
 
 
 	private void diskWrite(BTreeNode node) {
 		try {
+			ByteBuffer bb= ByteBuffer.allocate(offsetJump);
+			byte bool=0;
 			raf.seek(node.offset);
-			raf.writeInt(node.offset);
-			raf.writeBoolean(node.isLeaf());
-			raf.writeInt(node.n);
+			bb.putInt(node.offset);
+			if(node.isLeaf()) {
+				bool=1;
+			}
+			bb.put(bool);
+			bb.putInt(node.n);
 			
 			for(int i=0;i<node.n;i++) {
-				raf.writeInt(node.children[i]);
-				raf.writeLong(node.objects[i].getKey());
-				raf.writeInt(node.objects[i].getFreq());
+				bb.putInt(node.children[i]);
+				bb.putLong(node.objects[i].getKey());
+				bb.putInt(node.objects[i].getFreq());
 			}
-			raf.writeInt(node.children[node.n]);
+			bb.putInt(node.children[node.n]);
+			bb.flip();
+			byte[] data=new byte[bb.limit()];
+			bb.get(data);
+			raf.write(data);
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -219,6 +254,9 @@ public class BTree {
 			splitChild(newRoot,0,current);
 			current=newRoot;
 			height++;
+			raf.seek(0);
+			raf.writeInt(root);
+			raf.writeInt(height);
 		}
 		while(!done) {
 			childIndex=current.add(key);
