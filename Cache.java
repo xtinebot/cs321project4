@@ -1,93 +1,63 @@
 import java.util.LinkedList;
-
 /**
- * A cache class
- * 
- * CS 321 Summer 2018
- * 
- * @author Christine Chang
- *
+ * This class is used to create a cache object.
+ * @author keatongillihan
+ * @param <T>
  */
-
-public class Cache<T> extends LinkedList<T> {
-
-	private static final long serialVersionUID = 1L;
-	int desiredSize;
-	
-	/*
-	 * Constructor
-	 * 		creates cache of desired size
-	 * 
-	 * @ param size	desired size of cache
+public class Cache<T> {
+	private LinkedList<T> list;
+	private int size;
+	/**
+	 * the constructor for the Cache class.
+	 * Creates a cache using a linked list
+	 * @param size
 	 */
 	public Cache(int size) {
-		desiredSize = size;
-		
-		/* Create the empty cache */
-		for(int i = 0; i < desiredSize; i++) {
-			addLast(null);
+		list = new LinkedList<T>();
+		this.size=size;
+	}
+	/**
+	 * This method is used to search the cache for an object.
+	 * After the search is finished the searched for object
+	 * is moved to the front of the cache.
+	 * @param object
+	 * @return the matching object from the cache if it is found.
+	 * If it is not found it returns null
+	 */
+	public T getObject(T object) {
+		int index = list.indexOf(object);
+		T found= null;
+		if (index>=0) {
+			found=list.remove(index);
+			list.addFirst(found);
 		}
+		return found;
 	}
-	
 	/**
-	 * Adds object at top of cache, maintains desired size
-	 * 
-	 * @param element  the object to add to the cache
+	 * Adds an object to the front of the cache.
+	 * If adding the object would cause the cache to become
+	 * larger than size the last object is removed from the cache.
+	 * @param object
 	 */
-	public void addObject(T element) {
-		addFirst(element);
-		/* Ensure that desired size of cache is maintained */
-		if (size() > desiredSize) {
-			removeLast();
+	public T addObject(T object) {
+		T it =null;
+		if(list.size()==size){
+			it= list.removeLast();
 		}
-		
+		list.addFirst(object);
+		return it;
 	}
-	
 	/**
-	 * Returns next object
-	 * 
-	 * @return  object at front of cache
+	 * removes an object from the cache.
+	 * @param object
 	 */
-	public T getObject() {
-		return this.getObject();
+	public void removeObject(T object) {
+		list.remove(object);
 	}
-	
 	/**
-	 * Removes the desired object from cache
-	 * 
-	 * @param element  object to be removed
-	 */
-	public void removeObject(T element) {
-		this.remove(element);
-	}
-	
-	/**
-	 * Moves desired object to top of cache
-	 * 
-	 * @param element  object to be moved
-	 */
-	public void moveObject(T element) {
-		this.remove(element);
-		this.addFirst(element);
-	}
-	
-	/**
-	 * Clears all objects from the cache
+	 * empties the cache.
 	 */
 	public void clearCache() {
-		for(int i = 0; i < getDesiredSize(); i++) {
-			this.set(i, null);
-		}
+		list.clear();
 	}
-	
-	
-	/** 
-	 * Returns desired size of cache
-	 * 
-	 * @return  desired size of cache
-	 */
-	public int getDesiredSize() {
-		return desiredSize;
-	}
-	
 }

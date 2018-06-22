@@ -29,6 +29,7 @@ public class ParseGBKFile {
     		while ( ((nextLine = reader.readLine()) != null) && !foundDNA) {
     			if (nextLine.contains("ORIGIN")) {
     				foundDNA = true;
+    				return foundDNA;
     			}
     		} // next iteration of readLine() will give beginning of DNA seq
     		return foundDNA;
