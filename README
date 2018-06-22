@@ -15,9 +15,9 @@ height of the tree, and length of the sequence in the
 first four 4-byte positions of the file:
 
 First 4 bytes (int):		root location pointer
-Second 4 bytes (int):	degree of the tree
-Third 4 bytes (int):		height of the tree
-Fourth 4 bytes (int):	length of sequence to search
+Second 4 bytes (int):		height of the tree
+Third 4 bytes (int):		degree of the tree
+Fourth 4 bytes (int):		length of sequence to search
 
 
 Each BTreeNode stores up to [(2 * degree) - 1] number
@@ -26,6 +26,20 @@ indicate whether the node is a leaf node, a location
 pointer, the number of keys, and array of pointers
 for the children nodes, and an array of the 
 TreeObjects contained in the node.
+
+First 4 bytes (int):	location pointer
+Next 1 bytes (boolean):	leaf
+Next 4 bytes (int):		number of objects
+Next 4 bytes (int):     first child pointer
+Next 8 bytes (long):    first object key
+Next 4 bytes (int):     first object frequency
+Next 4 bytes (int):     second child pointer
+...
+Next 8 bytes (long):    last object key
+Next 4 bytes (int):     last object frequency
+Next 4 bytes (int):     last child pointer
+
+
 
 
 ***********************************
