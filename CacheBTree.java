@@ -12,6 +12,7 @@ public class Cache {
 			cacheSize = size;
 		}
 
+
 		/**
 		 * Searches through the cache and returns a reference to the object.
 		 * returns null if no node is found. Move the node to the front of the list otherwise.
