@@ -79,24 +79,26 @@ public class GeneBankCreateBTree {
 		
 		/* Parse GBK file into one DNA string */
 		ParseGBKFile parser = new ParseGBKFile(GBKFile);
+
 		while (parser.findDNA()) {
+
 			String wholeDNASequence = parser.parseDNA(); // get whole DNA string
 			/* Add sequences of desired length to the tree */
-			for (int i = 0; i < wholeDNASequence.length() - seqLength; i++) {
+			for (int i = 0; i <= wholeDNASequence.length() - seqLength; i++) {
 				String keySequence = wholeDNASequence.substring(i, i + seqLength);
 				if (!keySequence.contains("N")) {
-//					System.out.print(keySequence + "\t");
-					if (keySequence.equals("AAACTA")) {
-						System.out.println("FOUND: " + keySequence);
-					}
 					long key = parser.stringToKey(keySequence);
+					if(keySequence.equals("TTGATC")) {
+						System.out.println(keySequence);
+					}
+						
 					tree.insert(key);
 				}
 				
-				//System.out.println(key);
+//				
 			}
 		}
-		
+
 		/* Print dump file */
 		if (debugLevel == 1) {
 			tree.dumpTree();

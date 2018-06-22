@@ -17,6 +17,7 @@ public class GeneBankSearch {
 	static Scanner scanQuery;
 	static BTree bTree;
 	
+	
 
 	public static void main(String[] args) throws FileNotFoundException {
 		// args <0/1 no/with cache> <btree file> <query file> [<cache size>] [<debug level>]
