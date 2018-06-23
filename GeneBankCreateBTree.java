@@ -63,6 +63,11 @@ public class GeneBankCreateBTree {
 		/* Set cache size and debug level */
 		if (hasCache == true) { // if has cache, size must be input parameter
 			cacheSize = Integer.parseInt(args[4]);
+			if (args.length > 5) { // if no cache and has another argument, arg is debug level
+				debugLevel = Integer.parseInt(args[5]);
+			} else { // else default debug level set to 0
+				debugLevel = 0;
+			}
 		} else if (args.length > 4) { // if no cache and has another argument, arg is debug level
 			debugLevel = Integer.parseInt(args[4]);
 		} else { // else default debug level set to 0
@@ -88,10 +93,6 @@ public class GeneBankCreateBTree {
 				String keySequence = wholeDNASequence.substring(i, i + seqLength);
 				if (!keySequence.contains("N")) {
 					long key = parser.stringToKey(keySequence);
-					if(keySequence.equals("TTGATC")) {
-						System.out.println(keySequence);
-					}
-						
 					tree.insert(key);
 				}
 				
@@ -104,7 +105,7 @@ public class GeneBankCreateBTree {
 			tree.dumpTree();
 		}
 		
-		
+		tree.finish();
 
 	}
 
