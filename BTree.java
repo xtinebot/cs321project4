@@ -498,24 +498,21 @@ public class BTree {
 		}
 
 		public int searchInd(long key,int start, int end) {
-//			int current= (end-start)/2;
-//			if(n==0) {
-//				current=0;
-//			}else if(objects[end-1].getKey()<key) {
-//				current=end;
-//			}else if(start==end-1) {
-//				current=start;
-//			}else if(objects[current].getKey()<=key){
-//				current=searchInd(key,current,end);
-//			}else {
-//				current=searchInd(key,start,current);
-//			}
-//			return current;
-			int i=0;
-			while(i<n&&key>objects[i].getKey()) {
-				i++;
+			int mid=(end+start)/2;
+			if(start==end) {
+				return 0;
+			}else if(objects[mid].getKey()==key) {
+				return mid;
 			}
-			return i;
+				else if(objects[end-1].getKey()<key) {
+				return end;
+			}else if(objects[mid].getKey()<=key){
+				mid=searchInd(key,mid,end);
+			}else {
+				mid=searchInd(key,start,mid);
+			}
+			
+			return mid;
 		}
 		
 		public String toString(){
