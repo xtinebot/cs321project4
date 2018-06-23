@@ -17,7 +17,7 @@ public class BTree {
 	private int sequence;
 	private RandomAccessFile raf;
 	private int offsetJump;
-	int sum = 0;
+	private BTreeNode r;
 
 	public BTree(int degree,int cacheSize,int sequence, String fileName){
 			ByteBuffer bb= ByteBuffer.allocate(16);
@@ -38,9 +38,9 @@ public class BTree {
 				bb.get(data);
 				raf.write(data);
 				root=(int) raf.getFilePointer();
-				BTreeNode theRoot=new BTreeNode(root, 0, true,new int[2*degree],new TreeObject[2*degree-1]);
+				r=new BTreeNode(root, 0, true,new int[2*degree],new TreeObject[2*degree-1]);
 				currentOffset=root+offsetJump;
-				diskWrite(theRoot);
+				nodeWrite(r);
 			} catch (FileNotFoundException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -63,9 +63,9 @@ public class BTree {
 			raf.writeInt(degree);
 			raf.writeInt(sequence);
 			root=(int) raf.getFilePointer();
-			BTreeNode theRoot=new BTreeNode(root, 0, true,new int[2*degree],new TreeObject[2*degree-1]);
+			r=new BTreeNode(root, 0, true,new int[2*degree],new TreeObject[2*degree-1]);
 			currentOffset=root+offsetJump;
-			diskWrite(theRoot);
+			nodeWrite(r);
 			
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -88,7 +88,6 @@ public class BTree {
 	public BTree(String fileName) {
 		try {
 			raf = new RandomAccessFile(fileName, "r");
-			System.out.println(raf.getFilePointer());
 			raf.seek(0);
 			this.root = raf.readInt();
 			this.height = raf.readInt(); // check to make sure this is right order
@@ -104,7 +103,7 @@ public class BTree {
 	
 
 	public void test(int i){
-		BTreeNode current=diskRead(i);
+		BTreeNode current=nodeRead(i);
 		System.out.println(current.toString());
 		if(!current.isLeaf()){
 			for(int j=0;j<current.n+1;j++) {
@@ -139,9 +138,6 @@ public class BTree {
 				}
 				fw = new FileWriter(dump.getAbsolutePath());
 				out = new BufferedWriter(fw);
-				
-				raf.seek(0);
-				BTreeNode r = diskRead(raf.readInt()); // this needs another look
 				out.write(traverse(r));
 				out.close();
 			} catch (IOException e) {
@@ -156,16 +152,14 @@ public class BTree {
 		
 		for (k = 0; k < node.n; k++) {
 			if (!node.isLeaf()) {
-				DNAandFreq.append(traverse(diskRead(node.children[k])));
+				DNAandFreq.append(traverse(nodeRead(node.children[k])));
 			}
 			DNAandFreq.append(keyToString(node.objects[k].getKey()).toLowerCase()); 
 			DNAandFreq.append(": " + node.objects[k].getFreq() + "\n");
-			sum += node.objects[k].getFreq();
 		}
 		if (!node.isLeaf()) {
-			DNAandFreq.append(traverse(diskRead(node.children[k])));
+			DNAandFreq.append(traverse(nodeRead(node.children[k])));
 		}
-//		System.out.println("SUM = " + sum);
 		return DNAandFreq.toString();
 	}
 	
@@ -179,18 +173,17 @@ public class BTree {
 		for (int i = 0; i < diff; i++) {
 			stringSeq = "00" + stringSeq;
 		}
-//		System.out.println(stringSeq);
 		String retDNA = "";
 		
 		for(int i = 0; i < stringSeq.length(); i+=2) {
 			if ((stringSeq.charAt(i) == '0') && (stringSeq.charAt(i+1) == '0')) {
-				retDNA =  retDNA + "A";
+				retDNA =  retDNA + "a";
 			} else if ((stringSeq.charAt(i) == '0') && (stringSeq.charAt(i+1) == '1')) {
-				retDNA = retDNA + "C";
+				retDNA = retDNA + "c";
 			} else if ((stringSeq.charAt(i) == '1') && (stringSeq.charAt(i+1) == '0')) {
-				retDNA = retDNA + "G";
+				retDNA = retDNA + "g";
 			} else if ((stringSeq.charAt(i) == '1') && (stringSeq.charAt(i+1) == '1')) {
-				retDNA = retDNA + "T";
+				retDNA = retDNA + "t";
 			}
 		}
 		
@@ -199,14 +192,7 @@ public class BTree {
 	
 	
 	private TreeObject searches(int node,long key ){
-		BTreeNode point=diskRead(node);
-//		int index = point.searchInd(key, 0, point.n);
-//		if(index<0) {
-//			return null;
-//		}
-//		if(point.objects[index]!=null&&point.objects[index].getKey()==key) {
-//			return point.objects[index];
-//		}
+		BTreeNode point=nodeRead(node);
 		int i=0;
 		while(i<point.n&&key>point.objects[i].getKey()) {
 			i++;
@@ -237,6 +223,7 @@ public class BTree {
 			get=cache.getObject(get);
 			if(get==null) {
 				get=diskRead(offset);
+				nodeWrite(get);
 			}
 			return get;
 		}else {
@@ -335,18 +322,19 @@ public class BTree {
 	 */
 	public void insert(long key) throws Exception{
 		boolean done=false;
-		BTreeNode current=diskRead(root);
+		BTreeNode current=r;
 		BTreeNode next;
 		int childIndex;
 		int child;
 		if(current.n==2*degree-1) {
 			int[] temp=new int[2*degree];
 			temp[0]=root;
-			BTreeNode newRoot=new BTreeNode(currentOffset,0,false,temp,new TreeObject[2*degree-1]);
+			diskWrite(r);
+			r=new BTreeNode(currentOffset,0,false,temp,new TreeObject[2*degree-1]);
 			root=currentOffset;
 			currentOffset+=offsetJump;
-			splitChild(newRoot,0,current);
-			current=newRoot;
+			splitChild(r,0,current);
+			current=r;
 			height++;
 			raf.seek(0);
 			raf.writeInt(root);
@@ -356,16 +344,13 @@ public class BTree {
 			childIndex=current.add(key);
 			if(childIndex>-1) {
 				child=current.children[childIndex];
-				if(key==154&&child==4530) {
-					int stop=8;
-				}
-				next=diskRead(child);
+				next=nodeRead(child);
 				if(next.n==2*degree-1){
 					TreeObject mid =splitChild(current,childIndex,next);
 					
 					if(mid.getKey()<key) {
-						diskWrite(next);
-						next=diskRead(current.children[childIndex+1]);
+						nodeWrite(next);
+						next=nodeRead(current.children[childIndex+1]);
 					}else if(mid.getKey()==key){
 						next=current;
 					}
@@ -393,8 +378,8 @@ public class BTree {
 		BTreeNode newChild = new BTreeNode(currentOffset,degree-1,child.leaf,children,objects);
 		child.n=degree-1;
 		parent.addChild(childIndex+1, newChild.offset);
-		diskWrite(newChild);
-		diskWrite(child);
+		nodeWrite(newChild);
+		nodeWrite(child);
 		currentOffset+=offsetJump;
 		return mid;
 	}
@@ -402,6 +387,14 @@ public class BTree {
 	public String toString() {
 		return "root="+root+"degree="+degree;
 		
+	}
+	
+	public void finish() {
+		if(cache!=null) {
+			while(!cache.isEmpty()) {
+				diskWrite(cache.remove());
+			}
+		}
 	}
 	////////////////////////////////////////////////
 	/**
@@ -450,7 +443,7 @@ public class BTree {
 				}
 			}
 			children[childIndex]=newChild;
-			diskWrite(this);
+			nodeWrite(this);
 		}
 
 		public void addInner(TreeObject object) {
@@ -469,23 +462,20 @@ public class BTree {
 				objects[search]=object;
 				n++;
 			}
-			diskWrite(this);
+			nodeWrite(this);
 		}
 
 		public int add(long key) throws Exception {
 			int search= searchInd(key,0,n);
-			if(key==154&&leaf) {
-				int stop=8;
-			}
 			if(n==0) {
 				objects[0]=new TreeObject(key);
 				n++;
 				search=-1;
-				diskWrite(this);
+				nodeWrite(this);
 			}else if(objects[search]!=null&&objects[search].getKey()==key) {
 				objects[search].incrFreq();
 				search=-1;
-				diskWrite(this);
+				nodeWrite(this);
 			}else if(isLeaf()){
 				for(int i=n;i>search;i--) {
 						objects[i]=objects[i-1];
@@ -493,7 +483,7 @@ public class BTree {
 				objects[search]=new TreeObject(key);
 				search=-1;
 				n++;
-				diskWrite(this);
+				nodeWrite(this);
 			}else if(objects[search]!=null&&objects[search].getKey()<key){
 				search++;
 			}
@@ -536,8 +526,9 @@ public class BTree {
 			}
 			return string.toString();
 		}
-		public boolean equals(BTreeNode i) {
-			return i.offset==offset;
+		public boolean equals(Object i) {
+			BTreeNode k=(BTreeNode) i;
+			return k.offset==this.offset;
 			
 		}
 	}

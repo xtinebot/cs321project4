@@ -54,6 +54,15 @@ public class Cache<T> {
 	public void removeObject(T object) {
 		list.remove(object);
 	}
+	
+	public T remove() {
+		return list.removeFirst();
+		
+	}
+	
+	public boolean isEmpty() {
+		return list.isEmpty();
+	}
 	/**
 	 * empties the cache.
 	 */

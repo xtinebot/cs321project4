@@ -45,7 +45,7 @@ Next 4 bytes (int):     last child pointer
 ***********************************
 RELEVANT OBSERVATIONS
 ***********************************
- --- I believe that observations around the use of
- the cache are supposed to go here ---
+This project has cache implementation and the program does run with the cache,
+but the cache doesn't seem to improve the time at all.
 
 
